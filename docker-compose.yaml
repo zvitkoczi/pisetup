@@ -1,3 +1,30 @@
+
+## Next steps to set up Plex:
+
+### 1. **Create Plex directories:**
+```bash
+mkdir -p plex-config plex-transcode
+```
+
+### 2. **Get your Plex claim token:**
+1. Go to https://www.plex.tv/claim/
+2. Copy the token
+3. Replace `your-plex-claim-token` in the environment section
+
+### 3. **Mount your NAS folders:**
+You'll need to mount your NAS folders to `/mnt/nas/movies`, `/mnt/nas/tv`, and `/mnt/nas/music` or update the volume paths to match your actual NAS mount points.
+
+### 4. **Start Plex:**
+```bash
+docker-compose up -d plex
+```
+
+### 5. **Access Plex:**
+- Web interface: http://localhost:32400
+- You'll need to complete the initial setup
+
+**Do you need help with the NAS mounting or getting the Plex claim token?**
+
 services:
   mqtt:
     image: eclipse-mosquitto
@@ -33,6 +60,27 @@ services:
       - ./homeassistant-config:/config
     environment:
       - TZ=Europe/Budapest
+
+  plex:
+    image: plexinc/pms-docker:latest
+    container_name: plex
+    restart: unless-stopped
+    ports:
+      - "32400:32400"  # Plex web interface
+      - "32400:32400/udp"  # Plex discovery
+      - "1900:1900/udp"  # Plex DLNA
+      - "3005:3005"  # Plex companion
+      - "5353:5353/udp"  # Plex Bonjour discovery
+      - "8324:8324"  # Plex Roku
+    volumes:
+      - ./plex-config:/config  # Plex configuration
+      - ./plex-transcode:/transcode  # Transcoding directory
+      - /mnt/nas/movies:/movies:ro  # Mount your NAS movies folder
+    environment:
+      - TZ=Europe/Budapest
+      - PLEX_CLAIM=your-plex-claim-token  # Get this from plex.tv/claim
+      - PLEX_UID=1000
+      - PLEX_GID=1000
 
 volumes:
   mosquitto_data:
