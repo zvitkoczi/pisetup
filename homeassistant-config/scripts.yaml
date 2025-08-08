@@ -1,0 +1,73 @@
+# Home Assistant Scripts
+# Common automation scripts for your home
+
+# Good Morning Script
+good_morning:
+  alias: "Good Morning"
+  description: "Start the day with lights and notifications"
+  fields:
+    room:
+      description: "Room to activate"
+      example: "living_room"
+  sequence:
+    - service: light.turn_on
+      target:
+        area_id: "{{ room }}"
+      data:
+        brightness: 100
+        kelvin: 4000
+    - service: tts.cloud_say
+      data:
+        message: "Good morning! It's {{ now().strftime('%H:%M') }}"
+        cache: false
+
+# Good Night Script
+good_night:
+  alias: "Good Night"
+  description: "Prepare home for night time"
+  sequence:
+    - service: light.turn_off
+      target:
+        entity_id: group.all_lights
+    - service: climate.set_preset_mode
+      target:
+        entity_id: climate.home
+      data:
+        preset_mode: "Sleep"
+    - service: tts.cloud_say
+      data:
+        message: "Good night! Sleep well."
+        cache: false
+
+# Away Mode Script
+away_mode:
+  alias: "Away Mode"
+  description: "Set home to away mode"
+  sequence:
+    - service: light.turn_off
+      target:
+        entity_id: group.all_lights
+    - service: climate.set_preset_mode
+      target:
+        entity_id: climate.home
+      data:
+        preset_mode: "Away"
+    - service: notify.mobile_app
+      data:
+        title: "Away Mode Activated"
+        message: "Home is now in away mode"
+
+# Home Mode Script
+home_mode:
+  alias: "Home Mode"
+  description: "Set home to normal mode"
+  sequence:
+    - service: climate.set_preset_mode
+      target:
+        entity_id: climate.home
+      data:
+        preset_mode: "Home"
+    - service: notify.mobile_app
+      data:
+        title: "Home Mode Activated"
+        message: "Welcome home!"

@@ -1,0 +1,20 @@
+# Lights Package
+# This file contains all light-related configurations
+
+# Light automations
+automation:
+  # Example: Turn off all lights when everyone leaves
+  - alias: "Turn off all lights when everyone leaves"
+    description: "Turn off all lights when the last person leaves home"
+    trigger:
+      - platform: state
+        entity_id: group.all_persons
+        to: "not_home"
+    condition:
+      - condition: time
+        after: "22:00:00"
+        before: "06:00:00"
+    action:
+      - service: light.turn_off
+        target:
+          entity_id: group.all_lights 

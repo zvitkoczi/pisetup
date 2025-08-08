@@ -1,0 +1,34 @@
+# Security Package
+# This file contains all security-related configurations
+
+# Security groups
+group:
+  security_devices:
+    name: Security Devices
+    entities:
+      # Add your security devices here
+      # - binary_sensor.front_door
+      # - binary_sensor.motion_sensor
+      # - alarm_control_panel.home_alarm
+
+# Security automations
+automation:
+  # Example: Notify when motion detected at night
+  - alias: "Night motion alert"
+    description: "Send notification when motion is detected at night"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.motion_sensor
+        to: "on"
+    condition:
+      - condition: time
+        after: "22:00:00"
+        before: "06:00:00"
+      - condition: state
+        entity_id: group.all_persons
+        state: "home"
+    action:
+      - service: notify.mobile_app
+        data:
+          title: "Motion Detected"
+          message: "Motion detected at {{ now().strftime('%H:%M') }}" 

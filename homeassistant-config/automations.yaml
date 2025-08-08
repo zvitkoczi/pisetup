@@ -1,0 +1,96 @@
+# Home Assistant Automations
+# Common automations for your smart home
+
+# Automation 1: Turn on lights when arriving home
+- alias: "Turn on lights when arriving home"
+  description: "Turn on entry lights when someone arrives home"
+  trigger:
+    - platform: state
+      entity_id: group.all_persons
+      to: "home"
+  condition:
+    - condition: time
+      after: "06:00:00"
+      before: "22:00:00"
+  action:
+    - service: light.turn_on
+      target:
+        area_id: entry
+      data:
+        brightness: 50
+        kelvin: 4000
+        transition: 2
+
+# Automation 2: Turn off lights when leaving home
+- alias: "Turn off lights when leaving home"
+  description: "Turn off all lights when everyone leaves"
+  trigger:
+    - platform: state
+      entity_id: group.all_persons
+      to: "not_home"
+  action:
+    - service: light.turn_off
+      target:
+        entity_id: group.all_lights
+      data:
+        transition: 5
+
+# Automation 3: Night mode activation
+- alias: "Activate night mode"
+  description: "Activate night mode at sunset"
+  trigger:
+    - platform: sun
+      event: sunset
+  action:
+    - service: scene.turn_on
+      target:
+        entity_id: scene.sleep
+
+# Automation 4: Morning routine
+- alias: "Morning routine"
+  description: "Start morning routine at 7 AM"
+  trigger:
+    - platform: time
+      at: "07:00:00"
+  condition:
+    - condition: state
+      entity_id: group.all_persons
+      state: "home"
+  action:
+    - service: scene.turn_on
+      target:
+        entity_id: scene.reading
+
+# Automation 5: Notify when door opens
+- alias: "Notify when door opens"
+  description: "Send notification when front door opens"
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.front_door
+      to: "on"
+  condition:
+    - condition: state
+      entity_id: group.all_persons
+      state: "not_home"
+  action:
+    - service: notify.mobile_app
+      data:
+        title: "Door Opened"
+        message: "Front door was opened while you were away"
+
+# Automation 6: Energy saving mode
+- alias: "Energy saving mode"
+  description: "Reduce energy usage during peak hours"
+  trigger:
+    - platform: time
+      at: "14:00:00"
+  condition:
+    - condition: state
+      entity_id: group.all_persons
+      state: "not_home"
+  action:
+    - service: climate.set_preset_mode
+      target:
+        entity_id: climate.home
+      data:
+        preset_mode: "Away"

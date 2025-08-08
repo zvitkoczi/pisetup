@@ -1,0 +1,60 @@
+title: Home
+views:
+  - title: Overview
+    path: overview
+    icon: mdi:home
+    badges: []
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: glance
+            title: Quick Actions
+            entities:
+              - entity: light.living_room
+                name: Living Room
+              - entity: light.kitchen
+                name: Kitchen
+              - entity: switch.front_door
+                name: Front Door
+          
+          - type: entities
+            title: System Status
+            entities:
+              - entity: sensor.home_assistant_uptime
+                name: Uptime
+              - entity: sensor.home_assistant_version
+                name: Version
+              - entity: sensor.mqtt_status
+                name: MQTT Status
+              - entity: sensor.zigbee2mqtt_status
+                name: Zigbee2MQTT Status
+
+  - title: Lights
+    path: lights
+    icon: mdi:lightbulb
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: entities
+            title: All Lights
+            entities: []
+
+  - title: Climate
+    path: climate
+    icon: mdi:thermometer
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: entities
+            title: Climate Controls
+            entities: []
+
+  - title: Security
+    path: security
+    icon: mdi:shield-home
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: entities
+            title: Security Devices
+            entities: [] 

@@ -1,0 +1,62 @@
+# Home Assistant Scenes
+# Predefined scenes for different home states
+
+# Movie Night Scene
+- name: "Movie Night"
+  entities:
+    light.living_room:
+      state: "on"
+      brightness: 20
+      kelvin: 2700
+    light.kitchen:
+      state: "off"
+    climate.home:
+      preset_mode: "Home"
+      temperature: 22
+
+# Reading Scene
+- name: "Reading"
+  entities:
+    light.living_room:
+      state: "on"
+      brightness: 80
+      kelvin: 4000
+    light.kitchen:
+      state: "off"
+
+# Party Scene
+- name: "Party"
+  entities:
+    light.living_room:
+      state: "on"
+      brightness: 100
+      kelvin: 5000
+    light.kitchen:
+      state: "on"
+      brightness: 100
+      kelvin: 5000
+    climate.home:
+      preset_mode: "Home"
+      temperature: 20
+
+# Sleep Scene
+- name: "Sleep"
+  entities:
+    light.living_room:
+      state: "off"
+    light.kitchen:
+      state: "off"
+    climate.home:
+      preset_mode: "Sleep"
+      temperature: 18
+
+# Away Scene
+- name: "Away"
+  entities:
+    light.living_room:
+      state: "off"
+    light.kitchen:
+      state: "off"
+    climate.home:
+      preset_mode: "Away"
+      temperature: 16
