@@ -13,7 +13,7 @@ echo "📁 Directories created successfully!"
 
 # Start WireGuard container
 echo "�� Starting WireGuard container..."
-docker-compose up -d wireguard
+docker compose up -d wireguard
 
 # Wait for WireGuard to generate configs
 echo "⏳ Waiting for WireGuard to generate configurations..."
@@ -36,5 +36,5 @@ if [ -f "wireguard-config/peer1/peer1.conf" ]; then
     echo "   UDP Port: 51820"
 else
     echo "❌ WireGuard setup failed. Check logs with:"
-    echo "   docker-compose logs wireguard"
+    echo "   docker compose logs wireguard"
 fi

@@ -3,7 +3,7 @@
 echo "🚀 Starting all services..."
 
 # Start all services
-docker-compose up -d
+docker compose up -d
 
 echo "✅ All services started!"
 
@@ -19,7 +19,7 @@ DOMAIN=$(hostname -f 2>/dev/null || echo "$HOSTNAME.local")
 
 echo ""
 echo "📊 Service status:"
-docker-compose ps
+docker compose ps
 
 echo ""
 echo "🔗 Access your services:"
