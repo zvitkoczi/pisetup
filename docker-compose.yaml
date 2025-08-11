@@ -51,7 +51,7 @@ services:
       - /mnt/nas/movies:/movies:ro
     environment:
       - TZ=Europe/Budapest
-      - PLEX_CLAIM=claim-w3Kaez4Ry4z3WztQ5ySf
+      - PLEX_CLAIM=claim-5CQWHgtoAurZtdyeX1Ro
       - PLEX_UID=1000
       - PLEX_GID=1000
 
