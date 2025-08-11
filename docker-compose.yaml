@@ -35,7 +35,7 @@ services:
       - TZ=Europe/Budapest
 
   plex:
-    image: plexinc/pms-docker:latest
+    image: lscr.io/linuxserver/plex:latest
     container_name: plex
     restart: unless-stopped
     ports:
