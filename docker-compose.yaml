@@ -58,6 +58,7 @@ services:
       - PLEX_CLAIM=claim-V7uLSimxuRnHQxcmYobY
       - PLEX_UID=1000
       - PLEX_GID=1000
+      - PLEX_MEDIA_SERVER_DEBUG=true
     network_mode: host
     privileged: true
 
