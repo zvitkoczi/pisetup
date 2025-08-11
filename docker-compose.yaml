@@ -34,50 +34,6 @@ services:
     environment:
       - TZ=Europe/Budapest
 
-  plex:
-    image: lscr.io/linuxserver/plex:latest
-    container_name: plex
-    restart: unless-stopped
-    ports:
-      - "32400:32400"
-      - "32400:32400/udp"
-      - "1900:1900/udp"
-      - "3005:3005"
-      - "5353:5353/udp"
-      - "8324:8324"
-    volumes:
-      - ./plex-config:/config
-      - ./plex-transcode:/transcode
-      - /mnt/nas/movies:/movies:ro
-    environment:
-      - TZ=Europe/Budapest
-      - PLEX_CLAIM=claim-mc1ZPwvRd6gf8g82Bk_K
-      - PLEX_UID=1000
-      - PLEX_GID=1000
-
-  wireguard:
-    image: linuxserver/wireguard:latest
-    container_name: wireguard
-    restart: unless-stopped
-    ports:
-      - "51820:51820/udp"
-    volumes:
-      - ./wireguard-config:/config
-    environment:
-      - TZ=Europe/Budapest
-      - SERVERURL=auto
-      - SERVERPORT=51820
-      - PEERS=2
-      - PEERDNS=auto
-      - INTERNAL_SUBNET=10.13.13.0
-      - ALLOWEDIPS=0.0.0.0/0
-    cap_add:
-      - NET_ADMIN
-      - SYS_MODULE
-    sysctls:
-      - net.ipv4.conf.all.src_valid_mark=1
-      - net.ipv4.ip_forward=1
-
 volumes:
   mosquitto_data:
   mosquitto_config:
