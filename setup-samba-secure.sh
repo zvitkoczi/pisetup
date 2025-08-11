@@ -8,17 +8,35 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Get NAS credentials interactively
+# Get NAS credentials interactively with confirmation
 echo "🔐 Please enter your NAS credentials:"
 read -p "Username: " NAS_USERNAME
-read -s -p "Password: " NAS_PASSWORD
-echo ""
+
+# Get password twice for confirmation
+while true; do
+    read -s -p "Password: " NAS_PASSWORD1
+    echo ""
+    read -s -p "Confirm password: " NAS_PASSWORD2
+    echo ""
+    
+    if [ "$NAS_PASSWORD1" = "$NAS_PASSWORD2" ]; then
+        NAS_PASSWORD="$NAS_PASSWORD1"
+        break
+    else
+        echo "❌ Passwords don't match. Please try again."
+    fi
+done
+
+# Clear confirmation passwords from memory
+unset NAS_PASSWORD1 NAS_PASSWORD2
 
 # Verify credentials were provided
 if [ -z "$NAS_USERNAME" ] || [ -z "$NAS_PASSWORD" ]; then
     echo "❌ Username and password are required"
     exit 1
 fi
+
+echo "✅ Credentials confirmed!"
 
 # Install required packages
 echo "📦 Installing required packages..."
