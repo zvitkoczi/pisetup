@@ -8,6 +8,8 @@ This repository contains a complete Home Assistant setup with MQTT broker, Zigbe
 - **Mosquitto MQTT Broker**: Message broker for device communication
 - **Zigbee2MQTT**: Zigbee device management and MQTT bridge
 - **SMLIGHT SLZB-06/M/P7**: Ethernet Zigbee coordinator
+- **Plex Media Server**: Media streaming and organization
+- **WireGuard VPN**: Secure remote access and encrypted tunneling
 
 ## Directory Structure
 
@@ -28,8 +30,11 @@ homeAssistant/
 │       └── main.yaml           # Main dashboard
 ├── mosquitto_config/           # MQTT broker configuration
 │   └── mosquitto.conf          # Mosquitto configuration
-└── zigbee2mqtt-data/          # Zigbee2MQTT data and config
-    └── configuration.yaml       # Zigbee2MQTT configuration
+├── zigbee2mqtt-data/          # Zigbee2MQTT data and config
+│   └── configuration.yaml       # Zigbee2MQTT configuration
+├── plex-config/               # Plex Media Server configuration
+├── plex-transcode/            # Plex transcoding cache
+└── wireguard-config/          # WireGuard VPN configuration
 ```
 
 ## Getting Started
@@ -63,8 +68,48 @@ homeAssistant/
    - Web UI: http://localhost:8123
    - Zigbee2MQTT: http://localhost:8080
    - SLZB Device: http://192.168.100.126
+   - Plex: http://localhost:32400
 
 ## Configuration
+
+### WireGuard VPN Setup
+
+**Important**: WireGuard provides secure remote access to your home network through an encrypted VPN tunnel.
+
+#### Initial Setup:
+1. **Start the service**: `docker compose up -d wireguard`
+2. **Check service status**: `docker logs wireguard`
+3. **Get client configuration**: `cat wireguard-config/peer1/peer1.conf`
+
+#### Configuration Details:
+- **Server Port**: 51820/udp (standard WireGuard port)
+- **VPN Subnet**: 10.13.13.0/24
+- **Client IPs**: 10.13.13.x range
+- **Auto-restart**: Enabled for reliability
+
+#### Client Setup:
+
+**Mobile (Android/iOS):**
+1. Install WireGuard app from app store
+2. Scan QR code or import config file
+3. Connect to VPN
+
+**Desktop (Windows/macOS/Linux):**
+1. Install WireGuard client
+2. Import the `.conf` file from `wireguard-config/peer1/`
+3. Connect to VPN
+
+#### Remote Access:
+Once connected, VPN clients can access:
+- **Home Assistant**: `10.13.13.1:8123`
+- **Plex**: `10.13.13.1:32400`
+- **All other services** on your home network
+
+#### Benefits:
+- **Secure Access**: Encrypted tunnel for all traffic
+- **Remote Management**: Access Home Assistant from anywhere
+- **Mobile Support**: Works on all devices
+- **Privacy Protection**: Hide your real IP address
 
 ### Home Assistant
 
@@ -92,6 +137,29 @@ Configuration in `zigbee2mqtt-data/configuration.yaml`:
 - **Adapter**: EZSP v12 (compatible with SLZB firmware)
 - **MQTT Integration**: Automatic Home Assistant discovery
 - **Network Configuration**: Channel 11, PAN ID 6755
+
+### Plex Media Server
+
+Configuration in `plex-config/`:
+
+- **Media Library**: Mounted from `/mnt/nas/movies`
+- **Transcoding**: Dedicated cache directory
+- **Network Mode**: Host networking for optimal performance
+- **Access**: Web UI at port 32400
+
+### AdGuard Home
+
+Configuration in `adguard-home/AdGuardHome.yaml`:
+
+- **DNS Server**: Port 5353 (to avoid system conflicts)
+- **Web Interface**: Port 3000
+- **DHCP Server**: Enabled for network-wide control
+- **Ad Blocking**: Multiple filter lists including AdGuard DNS, Steven Black's Hosts, and WindowsSpyBlocker
+- **Network Configuration**: 
+  - Gateway: 192.168.1.1
+  - Subnet: 255.255.255.0
+  - IP Range: 192.168.1.100 - 192.168.1.200
+  - Lease Duration: 24 hours
 
 ## Features
 
@@ -169,6 +237,12 @@ docker exec homeassistant cp /config/home-assistant_v2.db /config/backup/
    - Validate configuration: Check Configuration in UI
    - Restart services: `docker-compose restart`
 
+4. **WireGuard VPN Issues**:
+   - Check logs: `docker logs wireguard`
+   - Verify port 51820/udp is open on router
+   - Check client configuration files exist
+   - Test VPN connection from client device
+
 ### Logs
 
 View logs for each service:
@@ -181,6 +255,9 @@ docker logs mqtt
 
 # Zigbee2MQTT logs
 docker logs zigbee2mqtt
+
+# WireGuard logs
+docker logs wireguard
 ```
 
 ## Development
