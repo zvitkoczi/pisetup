@@ -1,118 +1,120 @@
+# Home Assistant Complete Setup with VPN
+# This compose file provides a complete home automation and media streaming solution
+# with secure remote access through WireGuard VPN
+
 services:
+  # MQTT Broker - Message broker for IoT device communication
+  # Required by Zigbee2MQTT and Home Assistant for device control
   mqtt:
-    image: eclipse-mosquitto
-    container_name: mqtt
-    restart: unless-stopped
+    image: eclipse-mosquitto                    # Official Mosquitto MQTT broker
+    container_name: mqtt                        # Easy identification in Docker
+    restart: unless-stopped                     # Auto-restart on failure, but not on manual stop
     ports:
-      - "1883:1883"
+      - "1883:1883"                            # Standard MQTT port for device communication
     volumes:
-      - ./mosquitto_config:/mosquitto/config
-      - mosquitto_data:/mosquitto/data
+      - ./mosquitto_config:/mosquitto/config   # Persistent MQTT configuration
+      - mosquitto_data:/mosquitto/data         # Persistent MQTT data storage
 
+  # Zigbee2MQTT - Zigbee device management and MQTT bridge
+  # Connects Zigbee devices (lights, sensors) to Home Assistant via MQTT
   zigbee2mqtt:
-    image: koenkk/zigbee2mqtt
-    container_name: zigbee2mqtt
-    restart: unless-stopped
+    image: koenkk/zigbee2mqtt                  # Official Zigbee2MQTT image
+    container_name: zigbee2mqtt                 # Easy identification in Docker
+    restart: unless-stopped                     # Auto-restart on failure
     ports:
-      - "8080:8080"
+      - "8080:8080"                            # Web interface for device management
     depends_on:
-      - mqtt
+      - mqtt                                    # Must start after MQTT broker is ready
     volumes:
-      - ./zigbee2mqtt-data:/app/data
+      - ./zigbee2mqtt-data:/app/data           # Persistent Zigbee configuration and data
     environment:
-      - TZ=Europe/Budapest
-    privileged: true
+      - TZ=Europe/Budapest                     # Set timezone for proper device scheduling
+    privileged: true                            # Required for USB Zigbee coordinator access
 
+  # Home Assistant - Main home automation platform
+  # Central hub for controlling all smart devices and automations
   homeassistant:
-    container_name: homeassistant
-    image: ghcr.io/home-assistant/home-assistant:stable
-    restart: unless-stopped
+    container_name: homeassistant               # Easy identification in Docker
+    image: ghcr.io/home-assistant/home-assistant:stable  # Official Home Assistant image
+    restart: unless-stopped                     # Auto-restart on failure
     ports:
-      - "8123:8123"
+      - "8123:8123"                            # Web interface for Home Assistant
     volumes:
-      - ./homeassistant-config:/config
+      - ./homeassistant-config:/config         # Persistent Home Assistant configuration
     environment:
-      - TZ=Europe/Budapest
+      - TZ=Europe/Budapest                     # Set timezone for automations and scheduling
 
+  # Plex Media Server - Media streaming and organization
+  # Provides access to your movie/TV library with transcoding capabilities
   plex:
-    image: plexinc/pms-docker:latest
-    container_name: plex
-    restart: unless-stopped
+    image: plexinc/pms-docker:latest           # Official Plex Media Server image
+    container_name: plex                        # Easy identification in Docker
+    restart: unless-stopped                     # Auto-restart on failure
     ports:
-      - "32400:32400"
-      - "1900:1900/udp"
-      - "3005:3005"
-      - "5353:5353/udp"
-      - "8324:8324"
-      - "32410:32410/udp"
-      - "32412:32412/udp"
-      - "32413:32413/udp"
-      - "32414:32414/udp"
-      - "32469:32469"
+      - "32400:32400"                          # Main Plex web interface
+      - "1900:1900/udp"                        # DLNA discovery for smart TVs
+      - "3005:3005"                            # Plex companion app communication
+      - "5353:5353/udp"                        # Bonjour/mDNS discovery
+      - "8324:8324"                            # Roku communication
+      - "32410:32410/udp"                      # GDM (Good Day Mate) discovery
+      - "32412:32412/udp"                      # GDM discovery
+      - "32413:32413/udp"                      # GDM discovery
+      - "32414:32414/udp"                      # GDM discovery
+      - "32469:32469"                          # Plex companion app communication
     volumes:
-      - ./plex-config:/config
-      - ./plex-transcode:/transcode
-      - /mnt/nas/movies:/media:ro
+      - ./plex-config:/config                  # Persistent Plex configuration and metadata
+      - ./plex-transcode:/transcode            # Transcoding cache for better performance
+      - /mnt/nas/movies:/media:ro              # Read-only access to your media library
     environment:
-      - TZ=Europe/Budapest
-      - PLEX_CLAIM=claim-V7uLSimxuRnHQxcmYobY
-      - PLEX_UID=1000
-      - PLEX_GID=1000
-      - PLEX_MEDIA_SERVER_DEBUG=true
-    network_mode: host
-    privileged: true
+      - TZ=Europe/Budapest                     # Set timezone for media scheduling
+      - PLEX_CLAIM=claim-V7uLSimxuRnHQxcmYobY # Plex server claim token for setup
+      - PLEX_UID=1000                          # User ID for file permissions
+      - PLEX_GID=1000                          # Group ID for file permissions
+      - PLEX_MEDIA_SERVER_DEBUG=true           # Enable debug logging for troubleshooting
+    network_mode: host                          # Use host networking for optimal performance
+    privileged: true                            # Required for hardware transcoding
 
-  wireguard:
-    image: linuxserver/wireguard:latest
-    container_name: wireguard
-    restart: unless-stopped
-    ports:
-      - "51820:51820/udp"
+  # WireGuard VPN - Secure remote access to your home network
+  # Provides encrypted tunnel for accessing all services from anywhere
+  wg-easy:
+    image: ghcr.io/wg-easy/wg-easy:15          # WireGuard Easy management interface
+    container_name: wg-easy                     # Easy identification in Docker
+    networks:
+      wg:                                       # Custom isolated network for VPN
+        ipv4_address: 10.42.42.42              # Static IP for VPN server
+        ipv6_address: fdcc:ad94:bacf:61a3::2a  # Static IPv6 for VPN server
     volumes:
-      - ./wireguard-config:/config
-      - /lib/modules:/lib/modules
-    environment:
-      - TZ=Europe/Budapest
-      - SERVERURL=auto
-      - SERVERPORT=51820
-      - PEERS=1
-      - PEERDNS=auto
-      - INTERNAL_SUBNET=10.13.13.0
-      - ALLOWEDIPS=0.0.0.0/0
-      - PERSISTENTKEEPALIVE=25
+      - etc_wireguard:/etc/wireguard            # Persistent VPN configuration
+      - /lib/modules:/lib/modules:ro            # Read-only access to kernel modules
+    ports:
+      - "51820:51820/udp"                      # WireGuard VPN protocol (UDP)
+      - "51821:51821/tcp"                      # Web management interface (TCP)
+    restart: unless-stopped                     # Auto-restart on failure
     cap_add:
-      - NET_ADMIN
-      - SYS_MODULE
-    privileged: true
+      - NET_ADMIN                               # Required for network interface management
+      - SYS_MODULE                              # Required for kernel module loading
     sysctls:
-      - net.ipv4.conf.all.src_valid_mark=1
-      - net.ipv4.ip_forward=1
+      - net.ipv4.ip_forward=1                  # Enable IPv4 packet forwarding
+      - net.ipv4.conf.all.src_valid_mark=1     # Allow source marking for routing
+      - net.ipv6.conf.all.disable_ipv6=0       # Enable IPv6 support
+      - net.ipv6.conf.all.forwarding=1         # Enable IPv6 packet forwarding
+      - net.ipv6.conf.default.forwarding=1     # Enable IPv6 forwarding by default
 
-  wireguard-easy:
-    image: ghcr.io/ngoduykhanh/wireguard-ui:latest
-    container_name: wireguard-easy
-    restart: unless-stopped
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./wireguard-easy:/app
-      - ./wireguard-config:/etc/wireguard
-    environment:
-      - TZ=Europe/Budapest
-      - WG_HOST=auto
-      - PASSWORD=admin123
-      - WG_PORT=51820
-      - WG_DEFAULT_DNS=1.1.1.1
-      - WG_MTU=1420
-      - WG_PERSISTENT_KEEPALIVE=25
-      - WG_LOG_LEVEL=info
-    cap_add:
-      - NET_ADMIN
-      - SYS_MODULE
-    privileged: true
-    depends_on:
-      - wireguard
+# Custom network for WireGuard VPN isolation
+# Provides dedicated subnet for VPN clients and server
+networks:
+  wg:
+    driver: bridge                              # Standard bridge networking
+    ipam:
+      config:
+        - subnet: 10.42.42.0/24                # IPv4 subnet for VPN clients
+          gateway: 10.42.42.1                  # Gateway IP for VPN network
+        - subnet: fdcc:ad94:bacf:61a3::/64     # IPv6 subnet for VPN clients
+          gateway: fdcc:ad94:bacf:61a3::1      # IPv6 gateway for VPN network
 
+# Persistent data storage for all services
+# Ensures configuration and data survive container restarts
 volumes:
-  mosquitto_data:
-  mosquitto_config:
+  mosquitto_data:                               # MQTT broker data persistence
+  mosquitto_config:                             # MQTT configuration persistence
+  etc_wireguard:                                # WireGuard configuration persistence
