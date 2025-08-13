@@ -88,8 +88,10 @@ services:
       - /lib/modules:/lib/modules:ro            # Read-only access to kernel modules
     ports:
       - "51820:51820/udp"                      # WireGuard VPN protocol (UDP)
-      - "51821:51821/tcp"                      # Web management interface (TCP)
+      - "51821:51821/tcp"                      # Web management interface (HTTP)
     restart: unless-stopped                     # Auto-restart on failure
+    environment:
+      - INSECURE=true                           # Allow HTTP access to web UI (for local LAN use)
     cap_add:
       - NET_ADMIN                               # Required for network interface management
       - SYS_MODULE                              # Required for kernel module loading
