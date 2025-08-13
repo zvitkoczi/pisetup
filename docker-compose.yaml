@@ -118,3 +118,4 @@ volumes:
   mosquitto_data:                               # MQTT broker data persistence
   mosquitto_config:                             # MQTT configuration persistence
   etc_wireguard:                                # WireGuard configuration persistence
+ 
