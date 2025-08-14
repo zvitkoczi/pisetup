@@ -102,6 +102,87 @@ services:
       - net.ipv6.conf.all.forwarding=1         # Enable IPv6 packet forwarding
       - net.ipv6.conf.default.forwarding=1     # Enable IPv6 forwarding by default
 
+  # Hotspot init/NAT - prepares Wi‑Fi interface and NAT to uplink
+  # Purpose:
+  #   - Configure AP interface with static IP and enable IPv4 forwarding
+  #   - Set up NAT (Masquerade) so Wi‑Fi clients reach the Internet via uplink
+  # Requirements:
+  #   - Linux host, Wi‑Fi adapter supports AP (nl80211)
+  #   - host network + privileged to access netfilter and interfaces
+  # How to run:
+  #   - docker compose up -d hotspot-init hostapd dnsmasq-hotspot
+  hotspot-init:
+    image: alpine:3.20                         # Small base image
+    container_name: hotspot-init
+    network_mode: host                         # Work on host netns
+    privileged: true                           # Required for ip/iptables
+    environment:
+      - HOTSPOT_IFACE=wlan0                    # Wi-Fi interface acting as AP
+      - HOTSPOT_ADDR=192.168.50.1/24           # Hotspot gateway address
+      - UPLINK_IFACE=eth0                      # Uplink interface to Internet
+    command: >-
+      sh -c '
+        ip addr flush dev "$HOTSPOT_IFACE" || true;
+        ip addr add "$HOTSPOT_ADDR" dev "$HOTSPOT_IFACE";
+        ip link set "$HOTSPOT_IFACE" up;
+        sysctl -w net.ipv4.ip_forward=1;
+        iptables -t nat -C POSTROUTING -o "$UPLINK_IFACE" -j MASQUERADE || iptables -t nat -A POSTROUTING -o "$UPLINK_IFACE" -j MASQUERADE;
+        iptables -C FORWARD -i "$HOTSPOT_IFACE" -o "$UPLINK_IFACE" -j ACCEPT || iptables -A FORWARD -i "$HOTSPOT_IFACE" -o "$UPLINK_IFACE" -j ACCEPT;
+        iptables -C FORWARD -i "$UPLINK_IFACE" -o "$HOTSPOT_IFACE" -m state --state RELATED,ESTABLISHED -j ACCEPT || iptables -A FORWARD -i "$UPLINK_IFACE" -o "$HOTSPOT_IFACE" -m state --state RELATED,ESTABLISHED -j ACCEPT;
+        tail -f /dev/null'
+
+  # Hostapd - runs the Wi‑Fi AP
+  # Purpose:
+  #   - Broadcast SSID, handle WPA2 security for clients
+  # Config file:
+  #   - ./hotspot/hostapd.conf (edit SSID/password/channel)
+  # Verify adapter name in config matches HOTSPOT_IFACE (wlan0)
+  hostapd:
+    image: networkboot/hostapd:latest
+    container_name: hotspot-hostapd
+    network_mode: host
+    privileged: true
+    depends_on:
+      - hotspot-init
+    volumes:
+      - ./hotspot/hostapd.conf:/etc/hostapd/hostapd.conf:ro
+
+  # Dnsmasq - DHCP/DNS for the hotspot network
+  # Purpose:
+  #   - Issue DHCP leases to Wi‑Fi clients and advertise gateway/DNS
+  # Config file:
+  #   - ./hotspot/dnsmasq.conf
+  # Notes: bound to wlan0 only (bind-interfaces)
+  dnsmasq-hotspot:
+    image: andyshinn/dnsmasq:2.89
+    container_name: hotspot-dnsmasq
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+    depends_on:
+      - hotspot-init
+    volumes:
+      - ./hotspot/dnsmasq.conf:/etc/dnsmasq.conf:ro
+
+  # Tcpdump capture (optional) - use profile "pcap" to run on demand
+  # Purpose:
+  #   - Capture traffic on the AP interface for later analysis in Wireshark
+  # Usage:
+  #   - docker compose --profile pcap up -d tcpdump-hotspot
+  # Output:
+  #   - Files in ./pcaps/hotspot-YYYYmmdd-HHMMSS.pcap
+  tcpdump-hotspot:
+    image: corfr/tcpdump
+    container_name: hotspot-tcpdump
+    network_mode: host
+    privileged: true
+    profiles: ["pcap"]
+    environment:
+      - HOTSPOT_IFACE=wlan0
+    volumes:
+      - ./pcaps:/pcaps
+    command: sh -c 'mkdir -p /pcaps && tcpdump -i "$HOTSPOT_IFACE" -s 0 -w /pcaps/hotspot-$(date +%Y%m%d-%H%M%S).pcap'
+
 # Custom network for WireGuard VPN isolation
 # Provides dedicated subnet for VPN clients and server
 networks:
