@@ -125,9 +125,12 @@ services:
     network_mode: host                         # Work on host netns
     privileged: true                           # Required for ip/iptables
     environment:
-      <<: *hotspot-config                       # Use hotspot configuration anchor
+      HOTSPOT_IFACE: wlp0s20f3                # Wi-Fi interface acting as AP
+      HOTSPOT_ADDR: 192.168.50.1/24           # Hotspot gateway address
+      UPLINK_IFACE: eth0                      # Uplink interface to Internet
     command: >-
       sh -c '
+        apk add --no-cache iptables &&
         ip addr flush dev "$HOTSPOT_IFACE" || true;
         ip addr add "$HOTSPOT_ADDR" dev "$HOTSPOT_IFACE";
         ip link set "$HOTSPOT_IFACE" up;
@@ -163,7 +166,7 @@ services:
   #   - Issue DHCP leases to Wi‑Fi clients and advertise gateway/DNS
   # Config file:
   #   - ./hotspot/dnsmasq.conf
-  # Notes: bound to wlan0 only (bind-interfaces)
+  # Notes: bound to wlp0s20f3 only (bind-interfaces)
   dnsmasq-hotspot:
     image: jpillora/dnsmasq:latest
     container_name: hotspot-dnsmasq
@@ -174,6 +177,8 @@ services:
       - hotspot-init
     volumes:
       - ./hotspot/dnsmasq.conf:/etc/dnsmasq.conf:ro
+    ports:
+      - "8082:8080"                            # Web interface on different port to avoid conflict
 
   # Tcpdump capture (optional) - use profile "pcap" to run on demand
   # Purpose:
@@ -189,7 +194,7 @@ services:
     privileged: true
     profiles: ["pcap"]
     environment:
-      <<: *hotspot-config                       # Use hotspot configuration anchor
+      HOTSPOT_IFACE: wlp0s20f3                 # Wi-Fi interface for capture
     volumes:
       - ./pcaps:/pcaps
     command: sh -c 'mkdir -p /pcaps && tcpdump -i "$HOTSPOT_IFACE" -s 0 -w /pcaps/hotspot-$(date +%Y%m%d-%H%M%S).pcap'
