@@ -91,7 +91,9 @@ services:
       - "51821:51821/tcp"                      # Web management interface (HTTP)
     restart: unless-stopped                     # Auto-restart on failure
     environment:
-      - INSECURE=true                           # Allow HTTP access to web UI (for local LAN use)
+      INSECURE: true                            # Allow HTTP access to web UI (for local LAN use)
+      WG_HOST: vitko.ddns.net                   # Public hostname for clients
+      WG_PORT: 51820                            # Public UDP port for WireGuard
     cap_add:
       - NET_ADMIN                               # Required for network interface management
       - SYS_MODULE                              # Required for kernel module loading
@@ -117,9 +119,9 @@ services:
     network_mode: host                         # Work on host netns
     privileged: true                           # Required for ip/iptables
     environment:
-      - HOTSPOT_IFACE=wlan0                    # Wi-Fi interface acting as AP
-      - HOTSPOT_ADDR=192.168.50.1/24           # Hotspot gateway address
-      - UPLINK_IFACE=eth0                      # Uplink interface to Internet
+      HOTSPOT_IFACE: wlan0                     # Wi-Fi interface acting as AP
+      HOTSPOT_ADDR: 192.168.50.1/24            # Hotspot gateway address
+      UPLINK_IFACE: eth0                       # Uplink interface to Internet
     command: >-
       sh -c '
         ip addr flush dev "$HOTSPOT_IFACE" || true;
@@ -154,7 +156,7 @@ services:
   #   - ./hotspot/dnsmasq.conf
   # Notes: bound to wlan0 only (bind-interfaces)
   dnsmasq-hotspot:
-    image: andyshinn/dnsmasq:2.89
+    image: jpillora/dnsmasq:latest
     container_name: hotspot-dnsmasq
     network_mode: host
     cap_add:
@@ -178,7 +180,7 @@ services:
     privileged: true
     profiles: ["pcap"]
     environment:
-      - HOTSPOT_IFACE=wlan0
+      HOTSPOT_IFACE: wlan0
     volumes:
       - ./pcaps:/pcaps
     command: sh -c 'mkdir -p /pcaps && tcpdump -i "$HOTSPOT_IFACE" -s 0 -w /pcaps/hotspot-$(date +%Y%m%d-%H%M%S).pcap'
