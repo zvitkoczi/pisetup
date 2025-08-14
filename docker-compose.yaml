@@ -3,11 +3,7 @@
 # with secure remote access through WireGuard VPN
 
 # Environment variables for hotspot configuration
-x-hotspot-config: &hotspot-config
-  HOTSPOT_IFACE: wlp0s20f3
-  HOTSPOT_ADDR: 192.168.50.1/24
-  UPLINK_IFACE: eth0
-
+# These will be available to all services
 services:
   # MQTT Broker - Message broker for IoT device communication
   # Required by Zigbee2MQTT and Home Assistant for device control
@@ -125,9 +121,9 @@ services:
     network_mode: host                         # Work on host netns
     privileged: true                           # Required for ip/iptables
     environment:
-      HOTSPOT_IFACE: wlp0s20f3                # Wi-Fi interface acting as AP
-      HOTSPOT_ADDR: 192.168.50.1/24           # Hotspot gateway address
-      UPLINK_IFACE: eth0                      # Uplink interface to Internet
+      HOTSPOT_IFACE: ${HOTSPOT_IFACE:-wlp0s20f3}                # Wi-Fi interface acting as AP
+      HOTSPOT_ADDR: ${HOTSPOT_ADDR:-192.168.50.1/24}           # Hotspot gateway address
+      UPLINK_IFACE: ${UPLINK_IFACE:-eth0}                      # Uplink interface to Internet
     command: >-
       sh -c '
         apk add --no-cache iptables &&
@@ -194,7 +190,7 @@ services:
     privileged: true
     profiles: ["pcap"]
     environment:
-      HOTSPOT_IFACE: wlp0s20f3                 # Wi-Fi interface for capture
+      HOTSPOT_IFACE: ${HOTSPOT_IFACE:-wlp0s20f3}                 # Wi-Fi interface for capture
     volumes:
       - ./pcaps:/pcaps
     command: sh -c 'mkdir -p /pcaps && tcpdump -i "$HOTSPOT_IFACE" -s 0 -w /pcaps/hotspot-$(date +%Y%m%d-%H%M%S).pcap'
