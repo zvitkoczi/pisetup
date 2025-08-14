@@ -4,7 +4,7 @@
 
 # Environment variables for hotspot configuration
 x-hotspot-config: &hotspot-config
-  HOTSPOT_IFACE: wlan0
+  HOTSPOT_IFACE: wlp0s20f3
   HOTSPOT_ADDR: 192.168.50.1/24
   UPLINK_IFACE: eth0
 
