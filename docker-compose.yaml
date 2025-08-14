@@ -2,6 +2,12 @@
 # This compose file provides a complete home automation and media streaming solution
 # with secure remote access through WireGuard VPN
 
+# Environment variables for hotspot configuration
+x-hotspot-config: &hotspot-config
+  HOTSPOT_IFACE: wlan0
+  HOTSPOT_ADDR: 192.168.50.1/24
+  UPLINK_IFACE: eth0
+
 services:
   # MQTT Broker - Message broker for IoT device communication
   # Required by Zigbee2MQTT and Home Assistant for device control
@@ -119,9 +125,7 @@ services:
     network_mode: host                         # Work on host netns
     privileged: true                           # Required for ip/iptables
     environment:
-      HOTSPOT_IFACE: wlan0                     # Wi-Fi interface acting as AP
-      HOTSPOT_ADDR: 192.168.50.1/24            # Hotspot gateway address
-      UPLINK_IFACE: eth0                       # Uplink interface to Internet
+      <<: *hotspot-config                       # Use hotspot configuration anchor
     command: >-
       sh -c '
         ip addr flush dev "$HOTSPOT_IFACE" || true;
@@ -140,7 +144,7 @@ services:
   #   - ./hotspot/hostapd.conf (edit SSID/password/channel)
   # Verify adapter name in config matches HOTSPOT_IFACE (wlan0)
   hostapd:
-    image: networkboot/hostapd:latest
+    image: alpine:3.20
     container_name: hotspot-hostapd
     network_mode: host
     privileged: true
@@ -148,6 +152,11 @@ services:
       - hotspot-init
     volumes:
       - ./hotspot/hostapd.conf:/etc/hostapd/hostapd.conf:ro
+    command: >-
+      sh -c '
+        apk add --no-cache hostapd &&
+        hostapd -B /etc/hostapd/hostapd.conf &&
+        tail -f /dev/null'
 
   # Dnsmasq - DHCP/DNS for the hotspot network
   # Purpose:
@@ -180,7 +189,7 @@ services:
     privileged: true
     profiles: ["pcap"]
     environment:
-      HOTSPOT_IFACE: wlan0
+      <<: *hotspot-config                       # Use hotspot configuration anchor
     volumes:
       - ./pcaps:/pcaps
     command: sh -c 'mkdir -p /pcaps && tcpdump -i "$HOTSPOT_IFACE" -s 0 -w /pcaps/hotspot-$(date +%Y%m%d-%H%M%S).pcap'
